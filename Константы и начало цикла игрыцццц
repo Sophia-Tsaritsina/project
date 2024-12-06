@@ -1,0 +1,111 @@
+import sys
+import pygame as pg #сделали псевдоним для пигейма, теперь он пг
+import random as rnd
+
+# Введем основные константы
+# Константы для определения игрового состояния
+GAME_INIT = 0
+GAME_MENU = 1
+GAME_PLAY = 2
+GAME_QUIT= -1
+# Константу для определения количества кадров в секунду
+FSP = 60
+# размер одного блока игрового поля и змейки в пикселях
+BLOCK_SIZE = 24
+# максимальный уровень в игре
+MAX_LEVEL = 29
+# константы для определения направления (direction)
+D_UP = 0
+D_RIGHT = 64
+D_DOWN = 128
+D_LEFT = 192
+# константы для определения размера игрового поля в блоках
+SCREEN_WIDTH = 456
+SCREEN_HEIGHT = 528
+
+# с помощью этого словаря будем управлять змейкой
+# в соответствии с ее направлением
+SNAKE_OFFSETS = {
+    D_UP: pg.Vector2(0,-1),
+    D_DOWN: pg.Vector2(0,1),
+    D_RIGHT: pg.Vector2(1,0),
+    D_LEFT: pg.Vector2(-1,0)
+}
+
+# инициализируем PyGame
+pg.init()
+
+# переменная для определения игрового состояния
+game_state = GAME_INIT
+
+# переменные для отображения графики
+# функция создающая основной экран. На нем будет отрисовываться игра
+main_screen:pg.Surface = pg.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
+pg.display.set_caption('Brick Snake')
+# изображение бэкграунда
+img_back:pg.Surface = pg.image.load('assets/background.png')
+# изображение части змейки и яблока
+img_snakeblock:pg.Surface = pg.image.load('assets/full_brick.png')
+
+# все о змее
+# хвост - список векторов, т.е. просто координаты X и Y
+snake = []
+# скорость
+snake_speed:int = 0
+snake_speed_count:int = 0
+# направление
+snake_direction:int = 0 # 0 - вверх, 64 - вправо, 128 - вниз, 192 - влево
+temporary_direction:int = 0
+
+# все о яблоке
+# координаты
+appple_coord = pg.Vector2(0,0)
+# надо ли рисовать яблоко
+is_apple_required = True
+
+# переменные для хранения текущих значений (очки, макс очки, уровень)
+current_score:int = 0
+high_score:int = 0
+level:int = 1
+
+# переменные для нового шрифта
+# переменные для нового шрифта
+brick_font = pg.font.Font('assets\TickingTimebombBB.ttf',48)
+score_zone = brick_font.render(str(current_score).zfill(6),False,pg.Color(0,0,0,255))
+hiscore_zone = brick_font.render(str(high_score).zfill(6),False,pg.Color(0,0,0,255))
+level_zone = brick_font.render(str(level).zfill(2),False,pg.Color(0,0,0,255))
+
+# переменные для времени
+clock = pg.time.Clock()
+clock.tick(FPS)
+
+#переменная для хранения нажатых в процессе игры клавиш
+keys = None
+    
+
+# основной игровой цикл, который будет вызывать различные действия в зависимости от состояния
+while game_state != GAME_QUIT:
+    # проверяем, не нажат ли крестик, и выходим, если нажат
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            game_state = GAME_QUIT
+        # помещаем значение клавиши в keys, если произошло событие нажатия
+        if event.type == pg.KEYDOWN:
+            keys = event.key
+
+    # если состояния - инициализация игры, то 
+    if game_state == GAME_INIT:
+        # устанавливаем начальные координаты для головы змеи и всех ее хвостов
+        # ее длину и направление
+        snake = [
+            pg.Vector2(4,15),pg.Vector2(4,16),pg.Vector2(4,17),pg.Vector2(4,18),pg.Vector2(4,19)
+        ]
+        snake_direction = 0
+        temporary_direction = 0
+        # устанавливаем уровень в 1
+        level = 1
+        # сбрасываем очки (не максимальные)
+        current_score = 0
+        # меняем состояние на меню
+        game_state = GAME_MENU
+# библиотеки не закрываю. Не забудьте дописать в конце
