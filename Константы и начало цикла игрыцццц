@@ -108,4 +108,80 @@ while game_state != GAME_QUIT:
         current_score = 0
         # меняем состояние на меню
         game_state = GAME_MENU
+
+# если состояние - меню, то нам надо выбрать текущий уровень, от которого будет зависеть скорость змейки
+ elif game_state == GAME_MENU:
+        #print(keys)
+        # увеличиваем или уменьшаем уровень в зависимости от нажатой клавиши (вниз вверх)
+        # если уровень выше 10 - переключаем в 1, если 0 - переключаем в 10
+        if keys == pg.K_UP:
+            level +=1
+            if level == MAX_LEVEL+1:
+                level = 1
+        elif keys == pg.K_DOWN:
+            level -=1
+            if level == 0:
+                level = MAX_LEVEL
+        # если игрок нажимает Space, то:
+        elif keys == pg.K_SPACE:
+            # считаем скорость змейки по формуле (30-(level%30))*50/30
+            # на первом уровне движение каждые 48 кадров, на последнем - каждые два кадра
+            snake_speed = int(((MAX_LEVEL+1)-(level%(MAX_LEVEL+1)))*50/(MAX_LEVEL+1))
+            snake_speed_count = 0
+            game_state = GAME_PLAY
+
+elif game_state == GAME_PLAY:
+        # каждый кадр надо проверять, надо ли рисовать яблоко
+        # ялоко в любом случае будет появляться на нулевом кадре отсчета скорости змейки
+        # поэтому не выйдет такой ситуации, что змеяка еще не передвинулась, а яблоко появилось
+        # на месте, где она окажется в следующий раз
+        if is_apple_required:
+            # очень некрасивый способ, но вроде работает
+            # создаем список всех координат поля и убираем только те, в которых есть змея
+            all_coords = [pg.Vector2(x,y) for x in range(0,FIELD_W) for y in range(0,FIELD_H)]
+            for snk in snake:
+                if snk in all_coords: all_coords.remove(snk)
+            # выбираем случайное значение из полученного списка
+            rnd_apple = rnd.choice(all_coords)
+            # и наконец-то создаем яблоко
+            apple_coord = pg.Vector2(rnd_apple.x,rnd_apple.y)
+            # и обязательно надо отключить необходимость создания нового яблока
+            is_apple_required = False
+            
+        # тут мы управляем змейкой
+        # проверяем каждый кадр, какая кнопка нажата и меняем в зависимости от этого временное направление движения
+        if keys == pg.K_UP:
+            temporary_direction = D_UP
+        elif keys == pg.K_RIGHT:
+            temporary_direction = D_RIGHT
+        elif keys == pg.K_DOWN:
+            temporary_direction = D_DOWN
+        elif keys == pg.K_LEFT:
+            temporary_direction = D_LEFT
+        # если надоело - нажали на Q и игра вышла в меню
+        elif keys == pg.K_q:
+            game_state = GAME_INIT
+
+        # При этом надо учитывать, что у нас есть скорость.
+        # каждый кадр будет прибавляться переменная snake_speed_count
+        # таким образом можно сделать задержку в несколько кадров
+        if snake_speed_count == snake_speed:
+            # Если текущее направление не равно временному или если временое направление не противоположное
+            # тут поподробнее. Я специально выбрала для направления движения такие числа (0,64,128,192)
+            # Т.к. в одном байте 8 бит или 256 возможных значений, то эти числа - каждая четверть байта
+            # Если вычесть, например из 64 число 128 (0x80), а потом побитовым И обрезать последние 8 бит числа (0xff - это 255),
+            # то мы получим число 192 - то есть противоположное направление
+            if temporary_direction != snake_direction and (temporary_direction-0x80)&0xff != snake_direction:
+                snake_direction = temporary_direction
+
+            # Сперва надо подвинуть хвост. для этого меняем координаты всех хвостов с последнего
+            # на координаты следующего хвоста
+            for tail_i in range(len(snake)-1,0,-1):
+                snake[tail_i].x = snake[tail_i-1].x
+                snake[tail_i].y = snake[tail_i-1].y
+
+            # в самом начале мы ввели словарь SNAKE_OFFSETS
+            # он содержит единичные векторы, которые мы будем прибавлять к позиции головы змейки по ключу Направления
+            snake[0].x += SNAKE_OFFSETS[snake_direction].x
+            snake[0].y += SNAKE_OFFSETS[snake_direction].y
 # библиотеки не закрываю. Не забудьте дописать в конце
