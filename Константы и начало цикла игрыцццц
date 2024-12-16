@@ -184,4 +184,58 @@ elif game_state == GAME_PLAY:
             # он содержит единичные векторы, которые мы будем прибавлять к позиции головы змейки по ключу Направления
             snake[0].x += SNAKE_OFFSETS[snake_direction].x
             snake[0].y += SNAKE_OFFSETS[snake_direction].y
-# библиотеки не закрываю. Не забудьте дописать в конце
+
+            # теперь надо проверить, не врезалась ли голова змеи в стену
+            # если врезалась, то отправляем ее на другой конец поля
+            if snake[0].x == -1: snake[0].x = FIELD_W-1
+            if snake[0].x == FIELD_W: snake[0].x = 0
+            if snake[0].y == -1: snake[0].y = FIELD_H-1
+            if snake[0].y == FIELD_H: snake[0].y = 0
+
+            # теперь надо проверить, не врезалась ли голова в хвост
+            # если врезалась, то начинаем игру с меню
+            for block in snake[1:]:
+                if snake[0].x == block.x and snake[0].y == block.y:
+                    # обновляем high score если он меньше, чем текущие очки
+                    if current_score > high_score: high_score = current_score
+                    game_state = GAME_INIT
+
+            # проверяем, съела ли змея яблоко
+            if snake[0].x == apple_coord.x and snake[0].y == apple_coord.y:
+                # просто обновляем переменную и прибавляем очки
+                is_apple_required = True
+                current_score += level*30
+                # и добавляем в конец змейки блок с координатами аналогичными последнему блоку
+                # в следующей итерации он сам обновит координаты на правильные
+                new_block = pg.Vector2(snake[len(snake)-1].x,snake[len(snake)-1].y)
+                snake.append(new_block)
+
+            snake_speed_count = 0
+        else:
+            snake_speed_count += 1
+    
+
+    #ОТРИСОВКА
+    # рисуем фоновое изображение
+    main_screen.blit(img_back,(0,0))
+    # еще раз проверяем состояние, чтобы отрисовывать змейку при нужном состоянии
+    if game_state == GAME_PLAY:
+        for tail in snake:
+            main_screen.blit(img_snakeblock,((tail.x*BLOCK_SIZE)+BLOCK_SIZE,(tail.y*BLOCK_SIZE)+BLOCK_SIZE))
+        main_screen.blit(img_snakeblock,((apple_coord.x*BLOCK_SIZE)+BLOCK_SIZE,(apple_coord.y*BLOCK_SIZE)+BLOCK_SIZE))
+    # обновляем все очки и текущий уровень и рисуем на экране
+    score_zone = brick_font.render(str(current_score).zfill(6),False,pg.Color(0,0,0,255))
+    hiscore_zone = brick_font.render(str(high_score).zfill(6),False,pg.Color(0,0,0,255))
+    level_zone = brick_font.render(str(level).zfill(2),False,(0,0,0,255))
+    main_screen.blit(score_zone,(288,72))
+    main_screen.blit(hiscore_zone,(288,168))
+    main_screen.blit(level_zone,(288,264))
+
+    # обновляем экран
+    pg.display.update()
+    # очищаем keys чтобы не было умножения нажатий
+    keys = None
+    delta_time = clock.tick(FPS)/1000
+
+pg.quit()
+sys.exit()
